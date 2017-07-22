@@ -17,7 +17,7 @@ import (
     "github.com/kurrik/twittergo"
 )
 
-// MyConfig struct: for the user config to save tweets
+// MyConfig struct: for the user config
 // This is the struct that the config.json must have
 type MyConfig struct {
     ConsumerKey string
