@@ -27,7 +27,7 @@ type MyConfig struct {
     AccessSecret string
 
     RefreshTime int // time in minutes to check for new followers and unfollowers
-    Username string // username of user to monitor
+    Username string // username of the user to monitor
 }
 
 type FollowersList struct {
