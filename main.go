@@ -139,6 +139,7 @@ func mainLoop(refreshTime int, username string){
     }
 
     log.Printf("Initial followers updated!")
+    sendDM(username, "🤖 Started!")
 
     for{
         // sleep
@@ -147,6 +148,7 @@ func mainLoop(refreshTime int, username string){
         actualFollowers, err := getFollowers(username)
         if err != nil {
             log.Printf("Error getting followers: %s", err)
+            sendDM(username, fmt.Sprintf("🤖 Error getting followers: %s", err))
         } else {
             // Check unfollows
             for _, f := range previousFollowers.Ids{
@@ -156,7 +158,7 @@ func mainLoop(refreshTime int, username string){
                     if err != nil {
                         log.Printf("Error getting user info [%d]: %s", f, err)
                     } else {
-                        msg := fmt.Sprintf("%s stopped following you.", u.ScreenName())
+                        msg := fmt.Sprintf("👎 @%s stopped following you.", u.ScreenName())
                         sendDM(username, msg)
                     }
                 }
@@ -170,7 +172,7 @@ func mainLoop(refreshTime int, username string){
                     if err != nil {
                         log.Printf("Error getting user info [%d]: %s", f, err)
                     } else {
-                        msg := fmt.Sprintf("%s started following you!", u.ScreenName())
+                        msg := fmt.Sprintf("👍 @%s started following you!", u.ScreenName())
                         sendDM(username, msg)
                     }
                 }
