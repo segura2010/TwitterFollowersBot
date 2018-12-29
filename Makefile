@@ -2,6 +2,11 @@ BUILD=go build
 
 default: linux
 
+install:
+	@go install ${LDFLAGS}
+	@mv ${GOPATH}/bin/TwitterFollowersBot ${GOPATH}/bin/twitterfollowersbot
+	@echo "Binary on ${GOPATH}/bin/twitterfollowersbot"
+
 clean:
 	@rm -rf bin/
 	@rm -f debug debug.test web/debug web/debug.test
