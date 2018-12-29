@@ -10,6 +10,7 @@ import (
     "net/http"
     //"strings"
     "strconv"
+    "bytes"
 
     "flag"
 
@@ -56,15 +57,15 @@ func checkRateLimits(resp *twittergo.APIResponse){
 }
 
 func sendDM(username, text string){
-    query := url.Values{}
-    query.Set("screen_name", username)
-    query.Set("text", text)
+    body := []byte(`{"event": {"type": "message_create", "message_create": {"target": {"recipient_id":"`+ username +`"}, "message_data": {"text": "`+ text +`"}}}}`)
 
-    url := fmt.Sprintf("/1.1/direct_messages/new.json?%v", query.Encode())
-    req, err := http.NewRequest("POST", url, nil)
+    url := fmt.Sprintf("/1.1/direct_messages/events/new.json")
+    req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
     if err != nil {
+        log.Printf("Error sending DM: %s", err)
         return
     }
+    req.Header.Set("Content-Type", "application/json")
     _, err = client.SendRequest(req)
 
     if err != nil {
@@ -122,6 +123,30 @@ func getUserInfo(userId int64) (*twittergo.User, error){
     return results, nil
 }
 
+func getUserInfoByUsername(screenname string) (*twittergo.User, error){
+    query := url.Values{}
+    query.Set("screen_name", screenname)
+
+    url := fmt.Sprintf("/1.1/users/show.json?%v", query.Encode())
+    req, err := http.NewRequest("GET", url, nil)
+    if err != nil {
+        return nil, err
+    }
+    resp, err := client.SendRequest(req)
+
+    if err != nil {
+        return nil, err
+    }
+
+    results := &twittergo.User{}
+    err = resp.Parse(results)
+    if err != nil {
+        return nil, err
+    }
+
+    return results, nil
+}
+
 func IndexOf(array []int64, e int64) (int){
     for i, ele := range array{
         if ele == e{
@@ -132,6 +157,14 @@ func IndexOf(array []int64, e int64) (int){
 }
 
 func mainLoop(refreshTime int, username string){
+    usrInfo, err := getUserInfoByUsername(username)
+    if err != nil {
+        log.Printf("Error getting userId!: %s", err)
+        return
+    }
+
+    log.Printf("Got User ID: %s", usrInfo.IdStr())    
+
     previousFollowers, err := getFollowers(username)
     if err != nil {
         log.Printf("Error getting initial followers!!: %s", err)
@@ -139,7 +172,7 @@ func mainLoop(refreshTime int, username string){
     }
 
     log.Printf("Initial followers updated!")
-    sendDM(username, "🤖 Started!")
+    sendDM(usrInfo.IdStr(), "🤖 Started!")
 
     for{
         // sleep
@@ -159,7 +192,7 @@ func mainLoop(refreshTime int, username string){
                         log.Printf("Error getting user info [%d]: %s", f, err)
                     } else {
                         msg := fmt.Sprintf("👎 @%s stopped following you.", u.ScreenName())
-                        sendDM(username, msg)
+                        sendDM(usrInfo.IdStr(), msg)
                     }
                 }
             }
@@ -173,7 +206,7 @@ func mainLoop(refreshTime int, username string){
                         log.Printf("Error getting user info [%d]: %s", f, err)
                     } else {
                         msg := fmt.Sprintf("👍 @%s started following you!", u.ScreenName())
-                        sendDM(username, msg)
+                        sendDM(usrInfo.IdStr(), msg)
                     }
                 }
             }
